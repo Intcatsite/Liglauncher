@@ -2,7 +2,6 @@
 
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/cheb0chik)
 [![GitHub release](https://img.shields.io/github/v/release/intcatsite/Liglauncher?style=for-the-badge&color=black)](https://github.com/intcatsite/Liglauncher/releases)
-[![Build Status](https://img.shields.io/badge/Platform-Linux%20%7C%20Windows-blue?style=for-the-badge)](https://github.com/intcatsite/Liglauncher)
 
 ### 📋 Краткое описание
 **LigLauncher** — это высокопроизводительный и минималистичный лаунчер для Minecraft версии **1.21.11**, разработанный в рамках проекта **intcatsite**. Основной упор сделан на стабильность работы, современный графический интерфейс и отсутствие лишнего мусора.
