@@ -15,7 +15,6 @@
   <img src="https://img.shields.io/badge/СКАЧАТЬ_LIGLAUNCHER-FF4500?style=for-the-badge&logo=github&logoColor=white&labelColor=000000" height="60">
 </a>
 
-> *Выберите пакет под вашу систему: **.deb** для Linux или **.exe** для Windows.*
 
 ---
 
@@ -28,7 +27,7 @@
 
 ## 🌐 Контакты
 * **GitHub:** [intcatsite](https://github.com/intcatsite/)
-* **Telegram:** [@cheb0chik](https://t.me/cheb0chik)
+* **TGK:** [@cheb0chik](https://t.me/cheb0chik)
 
 ---
 
