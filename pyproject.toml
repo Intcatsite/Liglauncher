@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "liglauncher"
+version = "2.0.0"
+description = "LigLauncher — offline Minecraft launcher with full UI customization, multi-account support and local server hosting (Black Edition)"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "cheb0chik" }]
+requires-python = ">=3.10"
+dependencies = [
+    "PySide6>=6.7",
+    "minecraft-launcher-lib>=7.0",
+    "requests>=2.32",
+    "Pillow>=10.4",
+]
+
+[project.scripts]
+liglauncher = "liglauncher.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["liglauncher*"]
