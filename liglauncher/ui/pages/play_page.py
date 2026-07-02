@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
     QLabel,
-    QMessageBox,
     QProgressBar,
     QPushButton,
     QVBoxLayout,
@@ -20,9 +19,11 @@ from ...config import LauncherConfig, save_config
 from ...core import installer, versions
 from ...core.accounts import AccountManager
 from ...core.auth import OfflineAccount
+from ...core.errors import friendly_message
 from ...core.installer import InstallTarget
 from ...core.launcher import LaunchOptions, launch
 from ...core.skins import SkinStore
+from .. import dialogs
 from ..imaging import pil_to_pixmap
 from ..workers import Worker
 
@@ -167,12 +168,12 @@ class PlayPage(QWidget):
     def _on_play(self) -> None:
         uid = self.account_combo.currentData()
         if not uid:
-            QMessageBox.warning(self, "Нет аккаунта", "Сначала создайте аккаунт на странице «Аккаунты».")
+            dialogs.warning(self, self.cfg, "Нет аккаунта", "Сначала создайте аккаунт на странице «Аккаунты».")
             return
         acc = self.accounts.get(uid)
         mc_version = self._current_version()
         if not mc_version:
-            QMessageBox.warning(self, "Нет версии", "Выберите версию Minecraft.")
+            dialogs.warning(self, self.cfg, "Нет версии", "Выберите версию Minecraft.")
             return
 
         loader = self.loader_combo.currentText()
@@ -214,7 +215,7 @@ class PlayPage(QWidget):
             launch(opts)
             self.status_label.setText("Игра запущена.")
         except Exception as exc:  # noqa: BLE001
-            QMessageBox.critical(self, "Ошибка запуска", str(exc))
+            dialogs.critical(self, self.cfg, "Ошибка запуска", friendly_message(str(exc)))
             self.status_label.setText("Ошибка запуска.")
         finally:
             self.progress.setVisible(False)
@@ -224,4 +225,4 @@ class PlayPage(QWidget):
         self.progress.setVisible(False)
         self.play_btn.setEnabled(True)
         self.status_label.setText("Ошибка установки.")
-        QMessageBox.critical(self, "Ошибка установки", message)
+        dialogs.critical(self, self.cfg, "Ошибка установки", friendly_message(message))

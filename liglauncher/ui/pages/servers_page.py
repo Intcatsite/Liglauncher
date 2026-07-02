@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QMessageBox,
     QPlainTextEdit,
     QPushButton,
     QSpinBox,
@@ -22,6 +21,8 @@ from PySide6.QtWidgets import (
 
 from ...config import LauncherConfig
 from ...core import craftip, server as server_core
+from ...core.errors import friendly_message
+from .. import dialogs
 from ..workers import Worker
 
 log = logging.getLogger(__name__)
@@ -141,7 +142,9 @@ class ServersPage(QWidget):
         self._append_log("Сборка CraftIP-клиента из исходников (codeberg.org/craftip/craftip)…")
         self._build_worker = Worker(craftip.build_client, on_line=self._bridge.line.emit)
         self._build_worker.finished_ok.connect(lambda _p: self._refresh_craftip_status())
-        self._build_worker.failed.connect(lambda msg: QMessageBox.warning(self, "Сборка не удалась", msg))
+        self._build_worker.failed.connect(
+            lambda msg: dialogs.warning(self, self.cfg, "Сборка не удалась", friendly_message(msg))
+        )
         self._build_worker.finished_ok.connect(lambda _p: self.build_craftip_btn.setEnabled(True))
         self._build_worker.failed.connect(lambda _m: self.build_craftip_btn.setEnabled(True))
         self._build_worker.start()
@@ -179,7 +182,7 @@ class ServersPage(QWidget):
 
     def _on_create_failed(self, message: str) -> None:
         self.create_btn.setEnabled(True)
-        QMessageBox.critical(self, "Не удалось создать сервер", message)
+        dialogs.critical(self, self.cfg, "Не удалось создать сервер", friendly_message(message))
 
     def _on_server_ready(self) -> None:
         self._append_log("Сервер запущен и готов принимать игроков.")

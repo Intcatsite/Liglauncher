@@ -26,6 +26,8 @@ def main() -> int:
         SPEC.unlink()
 
     icon = ROOT / "assets" / "icon.ico"
+    assets_dir = ROOT / "assets"
+    sep = ";" if sys.platform.startswith("win") else ":"
     args = [
         sys.executable,
         "-m",
@@ -39,6 +41,8 @@ def main() -> int:
     ]
     if icon.exists():
         args += ["--icon", str(icon)]
+    if assets_dir.exists():
+        args += ["--add-data", f"{assets_dir}{sep}assets"]
     args += [str(ROOT / "entry_point.py")]
 
     print(">>>", " ".join(args))

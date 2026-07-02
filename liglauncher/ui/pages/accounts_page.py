@@ -15,15 +15,16 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QMessageBox,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
 )
 
+from ...config import LauncherConfig
 from ...core.accounts import AccountManager, DuplicateAccountError, AccountLimitError
 from ...core.skins import InvalidSkinError, SkinStore
+from .. import dialogs
 from ..imaging import pil_to_pixmap
 
 log = logging.getLogger(__name__)
@@ -32,8 +33,15 @@ COMMON_VERSIONS = ["_default", "1.21.1", "1.20.4", "1.19.4", "1.18.2", "1.16.5",
 
 
 class AccountsPage(QWidget):
-    def __init__(self, accounts: AccountManager, on_changed=None, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        cfg: LauncherConfig,
+        accounts: AccountManager,
+        on_changed=None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
+        self.cfg = cfg
         self.accounts = accounts
         self.skins = SkinStore()
         self._on_changed = on_changed
@@ -207,7 +215,7 @@ class AccountsPage(QWidget):
         try:
             self.accounts.create(name)
         except (ValueError, DuplicateAccountError, AccountLimitError) as exc:
-            QMessageBox.warning(self, "Не удалось создать аккаунт", str(exc))
+            dialogs.warning(self, self.cfg, "Не удалось создать аккаунт", str(exc))
             return
         self.new_name.clear()
         self._refresh_list()
@@ -223,7 +231,7 @@ class AccountsPage(QWidget):
         msg = f"Создано аккаунтов: {len(created)}."
         if errors:
             msg += f"\nПропущено (уже существуют/ошибка): {len(errors)}."
-        QMessageBox.information(self, "Массовое создание", msg)
+        dialogs.info(self, self.cfg, "Массовое создание", msg)
 
     def _rename_selected(self) -> None:
         uid = self._selected_uuid()
@@ -232,7 +240,7 @@ class AccountsPage(QWidget):
         try:
             self.accounts.rename(uid, self.rename_field.text())
         except (ValueError, DuplicateAccountError, KeyError) as exc:
-            QMessageBox.warning(self, "Не удалось переименовать", str(exc))
+            dialogs.warning(self, self.cfg, "Не удалось переименовать", str(exc))
             return
         self._refresh_list()
         self._notify_changed()
@@ -242,9 +250,9 @@ class AccountsPage(QWidget):
         if not uid:
             return
         acc = self.accounts.get(uid)
-        if acc and QMessageBox.question(
-            self, "Удалить аккаунт", f"Удалить «{acc.name}»? Скины аккаунта тоже будут удалены."
-        ) == QMessageBox.Yes:
+        if acc and dialogs.question(
+            self, self.cfg, "Удалить аккаунт", f"Удалить «{acc.name}»? Скины аккаунта тоже будут удалены."
+        ):
             self.skins.delete_all_for_account(uid)
             self.accounts.delete(uid)
             self._refresh_list()
@@ -253,7 +261,7 @@ class AccountsPage(QWidget):
     def _upload_skin(self) -> None:
         uid = self._selected_uuid()
         if not uid:
-            QMessageBox.information(self, "Выберите аккаунт", "Сначала выберите аккаунт слева.")
+            dialogs.info(self, self.cfg, "Выберите аккаунт", "Сначала выберите аккаунт слева.")
             return
         path, _ = QFileDialog.getOpenFileName(self, "Выберите скин", "", "Изображения (*.png *.jpg *.jpeg)")
         if not path:
@@ -263,7 +271,7 @@ class AccountsPage(QWidget):
         try:
             self.skins.set_skin(uid, path, version)
         except InvalidSkinError as exc:
-            QMessageBox.warning(self, "Неверный скин", str(exc))
+            dialogs.warning(self, self.cfg, "Неверный скин", str(exc))
             return
         self._refresh_detail_avatar()
         self._notify_changed()

@@ -1,4 +1,4 @@
-# 🚀 LigLauncher (Black Edition) v2
+# 🚀 LigLauncher v2
 
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/cheb0chik)
 [![GitHub release](https://img.shields.io/github/v/release/intcatsite/Liglauncher?style=for-the-badge&color=black)](https://github.com/intcatsite/Liglauncher/releases)

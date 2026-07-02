@@ -13,16 +13,18 @@ log = logging.getLogger(__name__)
 
 @dataclass
 class ThemeConfig:
-    accent_color: str = "#7c5cff"       # primary accent used across the whole UI
-    text_color: str = "#f5f5f7"
+    accent_color: str = "#2f7bf6"       # primary accent used across the whole UI
+    text_color: str = "#0f172a"
     font_family: str = "Segoe UI"
     font_size: int = 10
-    background_path: str = ""           # empty = built-in gradient
+    background_path: str = ""           # empty = built-in blue/white gradient
     background_blur: bool = True
-    window_opacity: float = 0.90        # 0.4..1.0, how see-through the window is
+    window_opacity: float = 0.96        # 0.4..1.0, how see-through the window is
     window_mode: str = "windowed"       # "windowed" | "fullscreen"
     window_width: int = 1180
     window_height: int = 740
+    corner_radius: int = 16             # px, applied to window/cards/buttons/fields
+    border_width: int = 1               # px, outline thickness on cards/fields/buttons
 
 
 @dataclass

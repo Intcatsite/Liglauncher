@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Optional
@@ -11,6 +12,30 @@ import minecraft_launcher_lib as mll
 log = logging.getLogger(__name__)
 
 ProgressFn = Callable[[str, int, int], None]
+
+# The Forge installer runs installer.jar as a subprocess and then tries to
+# clean up its temp dir; on Windows the JVM process (or an antivirus scan of
+# the freshly-downloaded jar) can still hold a handle to that file for a
+# moment, raising "WinError 32: file in use" even though the install itself
+# succeeded. This is transient, so retry a few times before giving up.
+_LOCK_RETRIES = 4
+_LOCK_RETRY_DELAY_S = 1.5
+
+
+def _retry_on_file_lock(fn: Callable[[], None]) -> None:
+    for attempt in range(1, _LOCK_RETRIES + 1):
+        try:
+            fn()
+            return
+        except PermissionError:
+            if attempt == _LOCK_RETRIES:
+                raise
+            log.warning(
+                "Install file locked by another process, retrying (%d/%d)…",
+                attempt,
+                _LOCK_RETRIES,
+            )
+            time.sleep(_LOCK_RETRY_DELAY_S)
 
 
 @dataclass
@@ -76,7 +101,9 @@ def install_forge(
             "Run the official Forge installer manually for this version."
         )
     log.info("Installing Forge %s", fv)
-    mll.forge.install_forge_version(fv, str(game_dir), callback=_make_callback(progress))
+    _retry_on_file_lock(
+        lambda: mll.forge.install_forge_version(fv, str(game_dir), callback=_make_callback(progress))
+    )
     return mll.forge.forge_to_installed_version(fv)
 
 

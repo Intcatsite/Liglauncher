@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPainterPath, QPixmap
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QIcon, QLinearGradient, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (
     QButtonGroup,
     QHBoxLayout,
@@ -19,12 +19,12 @@ from PySide6.QtWidgets import (
 
 from .. import __version__
 from ..config import LauncherConfig, save_config
+from ..paths import assets_dir
+from . import icons
 from .theme import Palette, build_stylesheet
 from .widgets.titlebar import TitleBar
 
 log = logging.getLogger(__name__)
-
-CORNER_RADIUS = 16
 
 
 class MainWindow(QWidget):
@@ -43,11 +43,16 @@ class MainWindow(QWidget):
         self.resize(cfg.theme.window_width, cfg.theme.window_height)
         self.setMouseTracking(True)
 
+        icon_path = assets_dir() / "icon.png"
+        if icon_path.exists():
+            self.setWindowIcon(QIcon(str(icon_path)))
+
         self._build_ui()
         self.apply_theme()
 
         if cfg.theme.window_mode == "fullscreen":
             self.showFullScreen()
+            self.title_bar.set_fullscreen(True)
 
     # -- UI construction ---------------------------------------------------
 
@@ -56,7 +61,7 @@ class MainWindow(QWidget):
         root.setContentsMargins(1, 1, 1, 1)
         root.setSpacing(0)
 
-        self.title_bar = TitleBar("LigLauncher — Black Edition")
+        self.title_bar = TitleBar("LigLauncher")
         self.title_bar.minimize_clicked.connect(self.showMinimized)
         self.title_bar.toggle_fullscreen_clicked.connect(self.toggle_fullscreen)
         self.title_bar.close_clicked.connect(self.close)
@@ -78,16 +83,23 @@ class MainWindow(QWidget):
         self.nav_group.setExclusive(True)
         self._nav_buttons: dict[str, QPushButton] = {}
 
+        self._nav_icon_names = {
+            "play": "play",
+            "accounts": "person",
+            "servers": "globe",
+            "settings": "settings",
+        }
         for key, label in (
-            ("play", "▶  Играть"),
-            ("accounts", "👤  Аккаунты"),
-            ("servers", "🌐  Серверы"),
-            ("settings", "⚙  Настройки"),
+            ("play", "  Играть"),
+            ("accounts", "  Аккаунты"),
+            ("servers", "  Серверы"),
+            ("settings", "  Настройки"),
         ):
             btn = QPushButton(label)
             btn.setObjectName("NavItem")
             btn.setCheckable(True)
             btn.setCursor(Qt.PointingHandCursor)
+            btn.setIconSize(self._nav_icon_size())
             nav_layout.addWidget(btn)
             self.nav_group.addButton(btn)
             self._nav_buttons[key] = btn
@@ -126,7 +138,22 @@ class MainWindow(QWidget):
         self._background_pixmap = None
         if self.cfg.theme.background_path and Path(self.cfg.theme.background_path).exists():
             self._background_pixmap = QPixmap(self.cfg.theme.background_path)
+        self._refresh_nav_icons()
+        self.title_bar.apply_icon_colors(self.cfg.theme.text_color)
         self.update()
+
+    def _nav_icon_size(self) -> QSize:
+        return QSize(18, 18)
+
+    def _refresh_nav_icons(self) -> None:
+        icons.clear_cache()
+        palette = Palette.from_theme(self.cfg.theme)
+        off_color = palette.text_dim.name()
+        on_color = palette.accent_text.name()
+        for key, btn in self._nav_buttons.items():
+            name = self._nav_icon_names.get(key)
+            if name:
+                btn.setIcon(icons.toggle_icon(name, off_color, on_color, size=18))
 
     # -- painting: rounded, translucent, blended background -------------
 
@@ -134,7 +161,7 @@ class MainWindow(QWidget):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
 
-        radius = 0 if self.isFullScreen() else CORNER_RADIUS
+        radius = 0 if self.isFullScreen() else self.cfg.theme.corner_radius
         rect = QRectF(self.rect())
         path = QPainterPath()
         path.addRoundedRect(rect, radius, radius)
@@ -147,14 +174,20 @@ class MainWindow(QWidget):
             x = (self.width() - scaled.width()) // 2
             y = (self.height() - scaled.height()) // 2
             painter.drawPixmap(x, y, scaled)
-            overlay = QColor(10, 10, 14)
+            overlay = QColor(255, 255, 255)
             overlay.setAlphaF(1.0 - self.cfg.theme.window_opacity)
             painter.fillRect(rect, overlay)
         else:
             grad = QLinearGradient(0, 0, self.width(), self.height())
             accent = QColor(self.cfg.theme.accent_color)
-            grad.setColorAt(0.0, QColor(12, 12, 18, int(255 * self.cfg.theme.window_opacity)))
-            grad.setColorAt(1.0, QColor(accent.red() // 4, accent.green() // 4, accent.blue() // 4, int(255 * self.cfg.theme.window_opacity)))
+            tint = QColor(
+                min(255, accent.red() + (255 - accent.red()) * 9 // 10),
+                min(255, accent.green() + (255 - accent.green()) * 9 // 10),
+                min(255, accent.blue() + (255 - accent.blue()) * 9 // 10),
+            )
+            alpha = int(255 * self.cfg.theme.window_opacity)
+            grad.setColorAt(0.0, QColor(255, 255, 255, alpha))
+            grad.setColorAt(1.0, QColor(tint.red(), tint.green(), tint.blue(), alpha))
             painter.fillRect(rect, grad)
 
         painter.setPen(Palette.from_theme(self.cfg.theme).border)
@@ -170,6 +203,7 @@ class MainWindow(QWidget):
         else:
             self.showFullScreen()
             self.cfg.theme.window_mode = "fullscreen"
+        self.title_bar.set_fullscreen(self.isFullScreen())
         save_config(self.cfg)
         self.update()
 

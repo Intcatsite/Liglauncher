@@ -113,11 +113,35 @@ class SettingsPage(QWidget):
         mode_row.addStretch(1)
         layout.addLayout(mode_row)
 
+        radius_row = QHBoxLayout()
+        radius_row.addWidget(QLabel("Скругление углов:"))
+        self.radius_slider = QSlider(Qt.Horizontal)
+        self.radius_slider.setRange(0, 32)
+        self.radius_slider.setValue(self.cfg.theme.corner_radius)
+        self.radius_slider.valueChanged.connect(self._on_radius_changed)
+        radius_row.addWidget(self.radius_slider, 1)
+        self.radius_label = QLabel(f"{self.cfg.theme.corner_radius}px")
+        self.radius_label.setFixedWidth(36)
+        radius_row.addWidget(self.radius_label)
+        layout.addLayout(radius_row)
+
+        border_row = QHBoxLayout()
+        border_row.addWidget(QLabel("Толщина обводки:"))
+        self.border_slider = QSlider(Qt.Horizontal)
+        self.border_slider.setRange(0, 4)
+        self.border_slider.setValue(self.cfg.theme.border_width)
+        self.border_slider.valueChanged.connect(self._on_border_changed)
+        border_row.addWidget(self.border_slider, 1)
+        self.border_label = QLabel(f"{self.cfg.theme.border_width}px")
+        self.border_label.setFixedWidth(36)
+        border_row.addWidget(self.border_label)
+        layout.addLayout(border_row)
+
         return card
 
     def _update_swatch(self) -> None:
         self.color_swatch.setStyleSheet(
-            f"background: {self.cfg.theme.accent_color}; border-radius: 6px; border: 1px solid rgba(255,255,255,60);"
+            f"background: {self.cfg.theme.accent_color}; border-radius: 6px; border: 1px solid rgba(15,23,42,60);"
         )
 
     def _pick_color(self) -> None:
@@ -160,6 +184,16 @@ class SettingsPage(QWidget):
 
     def _on_mode_changed(self) -> None:
         self.cfg.theme.window_mode = self.mode_combo.currentData()
+        self._commit()
+
+    def _on_radius_changed(self, value: int) -> None:
+        self.cfg.theme.corner_radius = value
+        self.radius_label.setText(f"{value}px")
+        self._commit()
+
+    def _on_border_changed(self, value: int) -> None:
+        self.cfg.theme.border_width = value
+        self.border_label.setText(f"{value}px")
         self._commit()
 
     def _commit(self) -> None:

@@ -9,6 +9,13 @@ from pathlib import Path
 APP_NAME = "LigLauncher"
 
 
+def assets_dir() -> Path:
+    """Bundled read-only assets (icons, app icon) — inside the frozen exe or repo root."""
+    if hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "assets"  # type: ignore[attr-defined]
+    return Path(__file__).resolve().parent.parent / "assets"
+
+
 def app_data_dir() -> Path:
     """Per-user data directory (game files, config, logs, accounts, skins)."""
     if sys.platform.startswith("win"):

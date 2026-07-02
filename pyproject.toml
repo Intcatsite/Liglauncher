@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "liglauncher"
 version = "2.0.0"
-description = "LigLauncher — offline Minecraft launcher with full UI customization, multi-account support and local server hosting (Black Edition)"
+description = "LigLauncher — offline Minecraft launcher with full UI customization, multi-account support and local server hosting"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "cheb0chik" }]
