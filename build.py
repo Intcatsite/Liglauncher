@@ -39,7 +39,7 @@ def main() -> int:
     ]
     if icon.exists():
         args += ["--icon", str(icon)]
-    args += [str(ROOT / "liglauncher" / "__main__.py")]
+    args += [str(ROOT / "entry_point.py")]
 
     print(">>>", " ".join(args))
     return subprocess.call(args)
