@@ -40,8 +40,7 @@ class TitleBar(QWidget):
 
         self.btn_close = QPushButton("✕")
         self.btn_close.setObjectName("TitleButton")
-        self.btn_close.setProperty("class", "close")
-        self.btn_close.setObjectName("CloseButton")
+        self.btn_close.setProperty("close", True)
         self.btn_close.setCursor(Qt.PointingHandCursor)
         self.btn_close.clicked.connect(self.close_clicked.emit)
 

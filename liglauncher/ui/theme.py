@@ -81,7 +81,7 @@ def build_stylesheet(theme: ThemeConfig) -> str:
         min-height: 28px;
     }}
     #TitleButton:hover {{ background: rgba(255,255,255,25); }}
-    #CloseButton:hover {{ background: #e74c4c; color: white; }}
+    #TitleButton[close="true"]:hover {{ background: #e74c4c; color: white; }}
 
     #NavBar {{
         background: rgba(14,14,18,150);
@@ -133,14 +133,33 @@ def build_stylesheet(theme: ThemeConfig) -> str:
     }}
     QPushButton#Secondary:hover {{ background: rgba(255,255,255,32); }}
 
-    QLineEdit, QComboBox, QSpinBox {{
+    QLineEdit, QComboBox, QSpinBox, QPlainTextEdit {{
         background: rgba(0,0,0,90);
         border: 1px solid {p.border.name(QColor.HexArgb)};
         border-radius: 8px;
         padding: 8px 10px;
         color: {p.text.name()};
+        selection-background-color: {p.accent.name()};
     }}
-    QLineEdit:focus, QComboBox:focus {{ border: 1px solid {p.accent.name()}; }}
+    QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {{ border: 1px solid {p.accent.name()}; }}
+
+    QSlider::groove:horizontal {{
+        height: 4px;
+        background: rgba(255,255,255,30);
+        border-radius: 2px;
+    }}
+    QSlider::sub-page:horizontal {{
+        height: 4px;
+        background: {p.accent.name()};
+        border-radius: 2px;
+    }}
+    QSlider::handle:horizontal {{
+        width: 16px;
+        height: 16px;
+        margin: -6px 0;
+        border-radius: 8px;
+        background: {p.text.name()};
+    }}
 
     QListWidget {{
         background: transparent;
