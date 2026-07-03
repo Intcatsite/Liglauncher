@@ -9,6 +9,7 @@ from typing import Callable
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFileDialog,
     QFontComboBox,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QScrollArea,
     QSlider,
     QSpinBox,
     QVBoxLayout,
@@ -30,23 +32,45 @@ from ..update_dialog import check_and_offer_update
 
 
 class SettingsPage(QWidget):
-    def __init__(self, cfg: LauncherConfig, on_theme_changed: Callable[[], None], parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        cfg: LauncherConfig,
+        on_theme_changed: Callable[[], None],
+        on_versions_changed: Callable[[], None] | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.cfg = cfg
         self.on_theme_changed = on_theme_changed
+        self.on_versions_changed = on_versions_changed
 
-        outer = QVBoxLayout(self)
-        outer.setContentsMargins(28, 24, 28, 24)
-        outer.setSpacing(16)
+        page = QVBoxLayout(self)
+        page.setContentsMargins(28, 24, 28, 0)
+        page.setSpacing(16)
 
         title = QLabel("Настройки")
         title.setObjectName("PageTitle")
-        outer.addWidget(title)
+        page.addWidget(title)
+
+        # The settings content is taller than the window at small sizes;
+        # without a scroll area Qt silently crushes combos/buttons to
+        # unusable slivers instead of scrolling.
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.NoFrame)
+        scroll.setStyleSheet("QScrollArea, QScrollArea > QWidget > QWidget { background: transparent; }")
+        content = QWidget()
+        outer = QVBoxLayout(content)
+        outer.setContentsMargins(0, 0, 12, 24)
+        outer.setSpacing(16)
 
         outer.addWidget(self._theme_card())
         outer.addWidget(self._game_card())
         outer.addWidget(self._about_card())
         outer.addStretch(1)
+
+        scroll.setWidget(content)
+        page.addWidget(scroll, 1)
 
     # -- about / updates card ------------------------------------------------
 
@@ -267,7 +291,31 @@ class SettingsPage(QWidget):
         dir_row.addWidget(dir_btn)
         layout.addLayout(dir_row)
 
+        toggles_row = QHBoxLayout()
+        self.snapshots_check = QCheckBox("Показывать снапшоты")
+        self.snapshots_check.setChecked(self.cfg.show_snapshots)
+        self.snapshots_check.toggled.connect(self._on_snapshots_toggled)
+        toggles_row.addWidget(self.snapshots_check)
+        self.old_check = QCheckBox("Показывать старые версии (alpha/beta)")
+        self.old_check.setChecked(self.cfg.show_old)
+        self.old_check.toggled.connect(self._on_old_toggled)
+        toggles_row.addWidget(self.old_check)
+        toggles_row.addStretch(1)
+        layout.addLayout(toggles_row)
+
         return card
+
+    def _on_snapshots_toggled(self, checked: bool) -> None:
+        self.cfg.show_snapshots = checked
+        save_config(self.cfg)
+        if self.on_versions_changed:
+            self.on_versions_changed()
+
+    def _on_old_toggled(self, checked: bool) -> None:
+        self.cfg.show_old = checked
+        save_config(self.cfg)
+        if self.on_versions_changed:
+            self.on_versions_changed()
 
     def _on_ram_changed(self, value: int) -> None:
         self.cfg.ram_mb = value

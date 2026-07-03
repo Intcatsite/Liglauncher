@@ -10,9 +10,9 @@ from pathlib import Path
 from typing import Callable, Optional
 
 import requests
-import minecraft_launcher_lib as mll
 
 from ..paths import servers_dir
+from . import mirror, versions
 
 log = logging.getLogger(__name__)
 
@@ -53,12 +53,12 @@ class ManagedServer:
 
 def _find_server_download(mc_version: str) -> tuple[str, Optional[str]]:
     """Return (download_url, sha1) for the vanilla server jar of mc_version."""
-    manifest = mll.utils.get_version_list()
-    entry = next((v for v in manifest if v.get("id") == mc_version), None)
-    if entry is None:
+    all_versions, _from_network = versions.fetch_all_versions()
+    entry = next((v for v in all_versions if v.get("id") == mc_version), None)
+    if entry is None or not entry.get("url"):
         raise ServerInstallError(f"Версия {mc_version} не найдена в манифесте Mojang.")
 
-    resp = requests.get(entry["url"], timeout=20)
+    resp = requests.get(mirror.rewrite_if_enabled(entry["url"]), timeout=20)
     resp.raise_for_status()
     version_json = resp.json()
     server = version_json.get("downloads", {}).get("server")
@@ -85,8 +85,9 @@ def create_server(
     if not srv.jar_path.exists():
         if progress:
             progress(f"Скачивание server.jar для {mc_version}…")
+        mirror.ensure_checked()
         url, _sha1 = _find_server_download(mc_version)
-        with requests.get(url, stream=True, timeout=120) as dl:
+        with requests.get(mirror.rewrite_if_enabled(url), stream=True, timeout=120) as dl:
             dl.raise_for_status()
             with open(srv.jar_path, "wb") as fh:
                 for chunk in dl.iter_content(chunk_size=1 << 16):

@@ -67,7 +67,13 @@ class ServersPage(QWidget):
         row1.addWidget(QLabel("Имя:"))
         row1.addWidget(self.name_field, 1)
         self.version_combo = QComboBox()
-        self.version_combo.addItems(["1.21.1", "1.20.4", "1.19.4", "1.18.2", "1.16.5", "1.12.2"])
+        self.version_combo.setEditable(True)
+        self.version_combo.setInsertPolicy(QComboBox.NoInsert)
+        completer = self.version_combo.completer()
+        if completer is not None:
+            completer.setFilterMode(Qt.MatchContains)
+            completer.setCompletionMode(completer.CompletionMode.PopupCompletion)
+        self._load_versions()
         row1.addWidget(QLabel("Версия:"))
         row1.addWidget(self.version_combo)
         card_layout.addLayout(row1)
@@ -118,6 +124,33 @@ class ServersPage(QWidget):
         self.log_view.setReadOnly(True)
         self.log_view.setMinimumHeight(220)
         outer.addWidget(self.log_view, 1)
+
+    # -- versions ----------------------------------------------------------
+
+    def _load_versions(self) -> None:
+        """Bundled snapshot instantly, then live manifest in the background."""
+        from ...core import versions as versions_core
+
+        def _fill(all_versions: list) -> None:
+            current = self.version_combo.currentText()
+            self.version_combo.blockSignals(True)
+            self.version_combo.clear()
+            for v in all_versions:
+                if v.get("type") == "release":
+                    self.version_combo.addItem(v["id"])
+            if current:
+                idx = self.version_combo.findText(current)
+                if idx >= 0:
+                    self.version_combo.setCurrentIndex(idx)
+            self.version_combo.blockSignals(False)
+
+        _fill(versions_core.bundled_versions())
+        self._versions_worker = Worker(versions_core.fetch_all_versions)
+        self._versions_worker.finished_ok.connect(lambda result: _fill(result[0]))
+        self._versions_worker.failed.connect(
+            lambda msg: log.warning("Background version fetch failed: %s", msg)
+        )
+        self._versions_worker.start()
 
     # -- craftip status -------------------------------------------------
 

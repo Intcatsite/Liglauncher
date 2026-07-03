@@ -161,6 +161,16 @@ def build_stylesheet(theme: ThemeConfig) -> str:
     }}
     QLineEdit:focus, QComboBox:focus, QPlainTextEdit:focus {{ border: {bw}px solid {p.accent.name()}; }}
 
+    QComboBox QAbstractItemView {{
+        background: white;
+        border: 1px solid {p.border.name(QColor.HexArgb)};
+        border-radius: {r_sm}px;
+        color: {p.text.name()};
+        selection-background-color: {p.accent.name()};
+        selection-color: {p.accent_text.name()};
+        outline: none;
+    }}
+
     QSlider::groove:horizontal {{
         height: 4px;
         background: {p.faint_tint};
@@ -215,6 +225,18 @@ def build_stylesheet(theme: ThemeConfig) -> str:
     QProgressBar::chunk {{
         background: {p.accent.name()};
         border-radius: {r_sm - 2}px;
+    }}
+
+    QCheckBox::indicator {{
+        width: 16px;
+        height: 16px;
+        border: {bw if bw else 1}px solid {p.border.name(QColor.HexArgb)};
+        border-radius: 4px;
+        background: {p.field_bg.name(QColor.HexArgb)};
+    }}
+    QCheckBox::indicator:checked {{
+        background: {p.accent.name()};
+        border-color: {p.accent.name()};
     }}
 
     QLabel#PageTitle {{

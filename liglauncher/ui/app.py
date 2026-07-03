@@ -29,7 +29,11 @@ def run() -> None:
     play_page = PlayPage(cfg, accounts)
     accounts_page = AccountsPage(cfg, accounts, on_changed=play_page.refresh_accounts)
     servers_page = ServersPage(cfg)
-    settings_page = SettingsPage(cfg, on_theme_changed=window.apply_theme)
+    settings_page = SettingsPage(
+        cfg,
+        on_theme_changed=window.apply_theme,
+        on_versions_changed=play_page.refresh_versions,
+    )
 
     window.register_page("play", play_page)
     window.register_page("accounts", accounts_page)

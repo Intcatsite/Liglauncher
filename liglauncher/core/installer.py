@@ -9,6 +9,8 @@ from typing import Callable, Optional
 
 import minecraft_launcher_lib as mll
 
+from . import mirror
+
 log = logging.getLogger(__name__)
 
 ProgressFn = Callable[[str, int, int], None]
@@ -109,6 +111,9 @@ def install_forge(
 
 def install_target(target: InstallTarget, game_dir: Path, progress: Optional[ProgressFn] = None) -> str:
     """Install the target and return the resolved installed version id."""
+    # If Mojang is blocked/unresolvable on this network, transparently switch
+    # all downloads to the BMCLAPI mirror before mll makes its first request.
+    mirror.ensure_checked()
     game_dir.mkdir(parents=True, exist_ok=True)
 
     if target.loader == "vanilla":

@@ -6,9 +6,10 @@ import re
 _PATTERNS: tuple[tuple[re.Pattern[str], str], ...] = (
     (
         re.compile(r"NameResolutionError|getaddrinfo failed|Failed to resolve|Max retries exceeded|ConnectionError", re.I),
-        "Не удалось подключиться к серверам Mojang (launchermeta.mojang.com / launcher.mojang.com).\n\n"
-        "Проверьте интернет-соединение. Если оно есть, но ошибка повторяется — "
-        "сервисы Mojang могут быть недоступны в вашей сети/регионе, попробуйте включить VPN и повторить.",
+        "Не удалось скачать файлы: ни серверы Mojang, ни резервное зеркало (BMCLAPI) не отвечают.\n\n"
+        "Проверьте интернет-соединение и повторите. Если сеть работает, но ошибка "
+        "повторяется — попробуйте сменить DNS (например, на 1.1.1.1 или 8.8.8.8) "
+        "или включить VPN.",
     ),
     (
         re.compile(r"WinError 32|being used by another process|used by another process", re.I),

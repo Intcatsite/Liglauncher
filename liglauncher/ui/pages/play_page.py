@@ -37,6 +37,9 @@ class PlayPage(QWidget):
         self.accounts = accounts
         self.skins = SkinStore()
         self._worker: Worker | None = None
+        self._versions_worker: Worker | None = None
+        self._last_versions: list | None = None
+        self._last_from_network: bool = False
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(28, 24, 28, 24)
@@ -72,6 +75,12 @@ class PlayPage(QWidget):
         ver_row.addWidget(self.loader_combo)
 
         self.version_combo = QComboBox()
+        self.version_combo.setEditable(True)
+        self.version_combo.setInsertPolicy(QComboBox.NoInsert)
+        completer = self.version_combo.completer()
+        if completer is not None:
+            completer.setFilterMode(Qt.MatchContains)
+            completer.setCompletionMode(completer.CompletionMode.PopupCompletion)
         ver_row.addWidget(QLabel("Версия:"))
         ver_row.addWidget(self.version_combo, 1)
         card_layout.addLayout(ver_row)
@@ -119,21 +128,67 @@ class PlayPage(QWidget):
         self._on_account_changed()
 
     def _load_versions(self) -> None:
+        """Populate the version combo with the FULL version list.
+
+        The bundled snapshot fills the combo instantly (works fully offline);
+        a background fetch then swaps in the live manifest so brand-new
+        versions appear as soon as Mojang (or the mirror) publishes them.
+        """
+        self._populate_version_combo(versions.bundled_versions(), from_network=False)
+        self.version_combo.currentIndexChanged.connect(self._update_skin_hint)
+        self.loader_combo.currentIndexChanged.connect(self._update_skin_hint)
+        self._update_skin_hint()
+
+        self._versions_worker = Worker(versions.fetch_all_versions)
+        self._versions_worker.finished_ok.connect(
+            lambda result: self._populate_version_combo(result[0], from_network=result[1])
+        )
+        self._versions_worker.failed.connect(
+            lambda msg: log.warning("Background version fetch failed: %s", msg)
+        )
+        self._versions_worker.start()
+
+    def refresh_versions(self) -> None:
+        """Re-filter the current list (called when snapshot/old toggles change)."""
+        if self._last_versions is not None:
+            self._populate_version_combo(self._last_versions, from_network=self._last_from_network)
+
+    def _populate_version_combo(self, all_versions: list, from_network: bool) -> None:
+        self._last_versions = all_versions
+        self._last_from_network = from_network
         try:
             game_dir = self.cfg.resolved_game_dir()
             installed = versions.installed_ids(game_dir)
-            common = ["1.21.1", "1.20.4", "1.19.4", "1.18.2", "1.16.5", "1.12.2", "1.8.9"]
-            for v in common:
-                label = f"{v} ✓" if v in installed else v
-                self.version_combo.addItem(label, v)
-            if self.cfg.version_id:
-                idx = self.version_combo.findData(self.cfg.version_id)
-                if idx >= 0:
-                    self.version_combo.setCurrentIndex(idx)
         except Exception as exc:  # noqa: BLE001
-            log.warning("Failed to populate versions: %s", exc)
-        self.version_combo.currentIndexChanged.connect(self._update_skin_hint)
-        self.loader_combo.currentIndexChanged.connect(self._update_skin_hint)
+            log.warning("Failed to read installed versions: %s", exc)
+            installed = set()
+
+        allowed = {"release"}
+        if self.cfg.show_snapshots:
+            allowed.add("snapshot")
+        if self.cfg.show_old:
+            allowed.update(("old_beta", "old_alpha"))
+
+        current = self.version_combo.currentData() or self.cfg.version_id
+
+        self.version_combo.blockSignals(True)
+        self.version_combo.clear()
+        seen = set()
+        for v in all_versions:
+            vid = v.get("id")
+            if not vid or vid in seen or v.get("type") not in allowed:
+                continue
+            seen.add(vid)
+            label = f"{vid} ✓" if vid in installed else vid
+            self.version_combo.addItem(label, vid)
+        # Installed versions not present in the manifest (e.g. modded ids).
+        for vid in sorted(installed - seen):
+            self.version_combo.addItem(f"{vid} ✓", vid)
+        if current:
+            idx = self.version_combo.findData(current)
+            if idx >= 0:
+                self.version_combo.setCurrentIndex(idx)
+        self.version_combo.blockSignals(False)
         self._update_skin_hint()
 
     def _on_account_changed(self) -> None:

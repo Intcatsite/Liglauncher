@@ -11,6 +11,14 @@ from .paths import config_path, minecraft_dir
 log = logging.getLogger(__name__)
 
 
+# Bumped when theme defaults change incompatibly (e.g. the dark->light switch):
+# configs saved by older builds get their COLORS reset to the new defaults
+# (fonts/sizes/window prefs are kept). Without this, a config.json written by
+# the old dark build carries text_color=#f5f5f7 (near-white) into the light
+# theme = invisible white-on-white text everywhere.
+THEME_SCHEMA = 2
+
+
 @dataclass
 class ThemeConfig:
     accent_color: str = "#2f7bf6"       # primary accent used across the whole UI
@@ -25,6 +33,7 @@ class ThemeConfig:
     window_height: int = 740
     corner_radius: int = 16             # px, applied to window/cards/buttons/fields
     border_width: int = 1               # px, outline thickness on cards/fields/buttons
+    schema: int = THEME_SCHEMA
 
 
 @dataclass
@@ -55,7 +64,14 @@ def load_config() -> LauncherConfig:
         clean = {k: v for k, v in data.items() if k in valid and k != "theme"}
         theme_valid = {f for f in ThemeConfig.__dataclass_fields__}
         theme_clean = {k: v for k, v in theme_data.items() if k in theme_valid}
-        return LauncherConfig(theme=ThemeConfig(**theme_clean), **clean)
+        if theme_clean.get("schema", 1) < THEME_SCHEMA:
+            # Config from an older (dark-theme) build: reset colors to the new
+            # light defaults, keep everything else the user chose.
+            theme_clean.pop("accent_color", None)
+            theme_clean.pop("text_color", None)
+            theme_clean["schema"] = THEME_SCHEMA
+        cfg = LauncherConfig(theme=ThemeConfig(**theme_clean), **clean)
+        return cfg
     except (OSError, json.JSONDecodeError, TypeError) as exc:
         log.warning("Failed to load config (%s); using defaults", exc)
         return LauncherConfig()

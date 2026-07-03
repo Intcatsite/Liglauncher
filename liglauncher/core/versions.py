@@ -1,18 +1,40 @@
-"""Version listing and metadata helpers."""
+"""Version listing and metadata helpers.
+
+The full version list comes from (in order):
+  1. Mojang's version manifest,
+  2. the BMCLAPI mirror (bmclapi2.bangbang93.com) when Mojang is
+     unreachable — some ISPs/regions block or fail to resolve
+     launchermeta.mojang.com,
+  3. a manifest snapshot bundled with the launcher (assets/versions.json),
+     so the picker is fully populated even with no network at all.
+
+New Minecraft versions appear automatically whenever either remote source
+is reachable; the bundled snapshot is only the worst-case floor.
+"""
 from __future__ import annotations
 
+import json
 import logging
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
 import minecraft_launcher_lib as mll
+import requests
+
+from ..paths import assets_dir
 
 log = logging.getLogger(__name__)
 
 
 VERSION_TYPES = ("release", "snapshot", "old_beta", "old_alpha")
 LOADER_TYPES = ("forge", "fabric", "quilt")
+
+MANIFEST_URLS = (
+    "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json",
+    "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json",
+    "https://bmclapi2.bangbang93.com/mc/game/version_manifest_v2.json",  # mirror
+)
 
 
 @dataclass(frozen=True)
@@ -25,6 +47,34 @@ class VersionEntry:
 def list_remote_versions() -> list[dict]:
     """Full Mojang version manifest. Network required."""
     return mll.utils.get_version_list()
+
+
+def bundled_versions() -> list[dict]:
+    path = assets_dir() / "versions.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data.get("versions", [])
+    except (OSError, json.JSONDecodeError) as exc:
+        log.warning("Bundled version snapshot unavailable: %s", exc)
+        return []
+
+
+def fetch_all_versions(timeout: float = 10.0) -> tuple[list[dict], bool]:
+    """Return (versions, from_network).
+
+    Tries each manifest URL in turn; falls back to the bundled snapshot.
+    Each version dict has at least 'id' and 'type'.
+    """
+    for url in MANIFEST_URLS:
+        try:
+            resp = requests.get(url, timeout=timeout)
+            resp.raise_for_status()
+            versions = resp.json().get("versions", [])
+            if versions:
+                return versions, True
+        except (requests.RequestException, ValueError) as exc:
+            log.info("Version manifest %s failed: %s", url, exc)
+    return bundled_versions(), False
 
 
 def list_installed_versions(game_dir: Path) -> list[dict]:
