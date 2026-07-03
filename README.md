@@ -3,6 +3,7 @@
 [![Telegram Channel](https://img.shields.io/badge/Telegram-Channel-229ED9?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/cheb0chik)
 [![GitHub release](https://img.shields.io/github/v/release/intcatsite/Liglauncher?style=for-the-badge&color=black)](https://github.com/intcatsite/Liglauncher/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/Intcatsite/Liglauncher)
 
 ### 📋 Описание
 
@@ -32,6 +33,24 @@
 </a>
 
 > Релизы под Windows собираются автоматически по тегу `vX.Y.Z`
+> через GitHub Actions (см. `.github/workflows/release.yml`).
+
+---
+
+## 🌍 Сайт-лендинг
+
+В папке [`site/`](site/) — статическая страница-визитка (скриншоты, список
+возможностей, кнопка скачать последний релиз). Задеплоить можно куда угодно:
+
+* **Netlify**: кнопка «Deploy to Netlify» вверху README — подключит репозиторий
+  и опубликует `site/` без единой настройки (там уже лежит `netlify.toml`).
+* **GitHub Pages / Vercel / Cloudflare Pages**: то же самое, укажите `site/`
+  как корень публикации — сайт полностью статический, без сборки.
+
+Кнопка «Скачать» на сайте ведёт на
+`.../releases/latest/download/LigLauncher.exe` — это стабильная ссылка от
+GitHub, которая всегда указывает на актив `LigLauncher.exe` последнего
+опубликованного релиза.
 > через GitHub Actions (см. `.github/workflows/release.yml`).
 
 ---
