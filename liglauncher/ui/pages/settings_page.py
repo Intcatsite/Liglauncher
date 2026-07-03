@@ -23,8 +23,10 @@ from PySide6.QtWidgets import (
     QColorDialog,
 )
 
+from ... import __version__
 from ...config import LauncherConfig, save_config
 from ...paths import backgrounds_dir
+from ..update_dialog import check_and_offer_update
 
 
 class SettingsPage(QWidget):
@@ -43,7 +45,27 @@ class SettingsPage(QWidget):
 
         outer.addWidget(self._theme_card())
         outer.addWidget(self._game_card())
+        outer.addWidget(self._about_card())
         outer.addStretch(1)
+
+    # -- about / updates card ------------------------------------------------
+
+    def _about_card(self) -> QWidget:
+        card = QWidget()
+        card.setObjectName("Card")
+        layout = QHBoxLayout(card)
+        layout.setContentsMargins(20, 16, 20, 16)
+        layout.addWidget(QLabel(f"LigLauncher v{__version__}"))
+        layout.addStretch(1)
+        check_btn = QPushButton("Проверить обновления")
+        check_btn.setObjectName("Secondary")
+        check_btn.setCursor(Qt.PointingHandCursor)
+        check_btn.clicked.connect(self._check_updates)
+        layout.addWidget(check_btn)
+        return card
+
+    def _check_updates(self) -> None:
+        check_and_offer_update(self, self.cfg, silent=False)
 
     # -- theme card ---------------------------------------------------------
 

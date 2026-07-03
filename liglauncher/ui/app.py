@@ -3,15 +3,18 @@ from __future__ import annotations
 
 import sys
 
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication
 
 from ..config import load_config
+from ..core import updater
 from ..core.accounts import AccountManager
 from .main_window import MainWindow
 from .pages.accounts_page import AccountsPage
 from .pages.play_page import PlayPage
 from .pages.servers_page import ServersPage
 from .pages.settings_page import SettingsPage
+from .update_dialog import check_and_offer_update
 
 
 def run() -> None:
@@ -34,4 +37,8 @@ def run() -> None:
     window.register_page("settings", settings_page)
 
     window.show()
+
+    if updater.is_frozen():
+        QTimer.singleShot(2000, lambda: check_and_offer_update(window, cfg, silent=True))
+
     sys.exit(app.exec())
